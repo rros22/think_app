@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android", "web"],
+  "apple": {
+    "modules": ["AppRemovalGuardModule"]
+  },
+  "android": {
+    "modules": ["com.ramonros22.appremovalguard.AppRemovalGuardModule"]
+  }
+}

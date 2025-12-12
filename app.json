@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "think.",
-    "slug": "think.",
+    "name": "think",
+    "slug": "think",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -14,7 +14,12 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ramonros22.think",
+      "appleTeamId": "RP7387Z8TR",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +27,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.ramonros22.think"
     },
     "web": {
       "bundler": "metro",
@@ -30,10 +36,41 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "react-native-nfc-manager",
+        {
+          "nfcPermission": "Custom permission message",
+          "selectIdentifiers": ["A0000002471001"],
+          "systemCodes": ["8008"],
+          "includeNdefEntitlement": false,
+        }
+      ],
+      [
+      "expo-build-properties",
+      {
+        "ios": {
+          "deploymentTarget": "15.1"
+        }
+      }
+    ],
+    [
+      "react-native-device-activity",
+      {
+        "appleTeamId": "RP7387Z8TR",
+        "appGroup": "group.com.ramonros22.think"
+      }
+    ]
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "a7f47088-926e-4674-ade6-48c5b3d25de4"
+      }
+    },
+    "owner": "thinkapp"
   }
 }

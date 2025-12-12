@@ -1,0 +1,10 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "app-removal-guard": ["../src/index"],
+      "app-removal-guard/*": ["../src/*"]
+    }
+  }
+}
