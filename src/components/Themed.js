@@ -16,6 +16,7 @@ import ScheduleSVG from "../icons/scheduleSVG";
 import SettingsSVG from "../icons/settingsSVG";
 import StatsSVG from "../icons/statsSVG";
 
+import { AntDesign } from "@expo/vector-icons";
 import { SafeAreaView as DefaultSafeAreaView } from "react-native-safe-area-context";
 
 import Colors from "../constants/Colors";
@@ -276,5 +277,43 @@ export function SettingsIcon(props) {
       style={style}
       {...otherProps}
     />
+  );
+}
+export function CloseButton(props) {
+  const {
+    style,
+    colorRole = "card", // background fill role
+    lightColor,
+    darkColor,
+    size = 40,
+    ...otherProps
+  } = props;
+
+  const backgroundColor = useThemeColor(
+    { light: lightColor, dark: darkColor },
+    colorRole
+  );
+
+  // Icon color should follow theme "text" (or override via lightColor/darkColor if you pass them for text specifically)
+  const iconColor = useThemeColor({}, "text");
+
+  return (
+    <DefaultPressable
+      {...otherProps}
+      style={({ pressed }) => [
+        {
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor,
+          alignItems: "center",
+          justifyContent: "center",
+          opacity: pressed ? 0.85 : 1,
+        },
+        style,
+      ]}
+    >
+      <AntDesign name="close" size={size / 3} color={iconColor} />
+    </DefaultPressable>
   );
 }

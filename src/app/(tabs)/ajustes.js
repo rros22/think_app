@@ -9,10 +9,16 @@ import {
   View,
 } from "../../components/Themed";
 
+import { useColorScheme } from "../../components/useColorScheme";
+import Colors from "../../constants/Colors";
+
 import { setDenyAppRemoval } from "app-removal-guard";
 import { useConfigStore } from "../../store/configStore"; // adjust path if needed
 
 export default function SettingsScreen() {
+  const colorScheme = useColorScheme();
+  const textColor = Colors[colorScheme ?? "light"].text;
+
   const isBlocked = useConfigStore((s) => s.isBlocked);
   const preventDeletionWhileBlocked = useConfigStore(
     (s) => s.preventDeletionWhileBlocked
@@ -74,9 +80,18 @@ export default function SettingsScreen() {
 
           <Pressable
             colorRole="background"
-            style={styles.logoutButton}
+            style={{
+              marginTop: "10",
+              padding: "6%",
+              borderRadius: 40,
+              width: "100%",
+              justifyContent: "center",
+              alignItems: "center",
+              borderWidth: 1,
+              borderColor: textColor,
+            }}
             onPress={() => {
-              // TODO: share logic
+              // TODO: implement logout logic
             }}
           >
             <Text style={[styles.meta, { fontWeight: "600" }]}>
@@ -94,7 +109,7 @@ export default function SettingsScreen() {
 
           <View colorRole="separator" style={styles.divider} />
 
-          <View style={styles.row}>
+          <View colorRole="card" style={styles.row}>
             <Text style={styles.rowText}>Modo estricto</Text>
             <Switch
               value={!!preventDeletionWhileBlocked}
@@ -148,12 +163,33 @@ export default function SettingsScreen() {
 
         {/* Cerrar sesión */}
         <Pressable
-          style={styles.logoutButton}
+          style={{
+            marginTop: "10",
+            padding: "6%",
+            borderRadius: 40,
+            width: "100%",
+            justifyContent: "center",
+            alignItems: "center",
+            borderWidth: 1,
+            borderColor: textColor,
+            // iOS
+            shadowColor: "#000",
+            shadowOffset: { width: 6, height: 6 },
+            shadowOpacity: 0.15,
+            shadowRadius: 12,
+            borderWidth: 1,
+            borderColor: textColor,
+
+            // Android
+            elevation: 8,
+          }}
           onPress={() => {
             // TODO: implement logout logic
           }}
         >
-          <Text style={styles.logoutText}>Cerrar sesión</Text>
+          <Text style={[styles.meta, { fontWeight: "500" }]}>
+            Cerrar sesión
+          </Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>

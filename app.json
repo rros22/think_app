@@ -43,24 +43,24 @@
           "nfcPermission": "Custom permission message",
           "selectIdentifiers": ["A0000002471001"],
           "systemCodes": ["8008"],
-          "includeNdefEntitlement": false,
+          "includeNdefEntitlement": false
         }
       ],
       [
-      "expo-build-properties",
-      {
-        "ios": {
-          "deploymentTarget": "15.1"
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "15.1"
+          }
         }
-      }
-    ],
-    [
-      "react-native-device-activity",
-      {
-        "appleTeamId": "RP7387Z8TR",
-        "appGroup": "group.com.ramonros22.think"
-      }
-    ]
+      ],
+      [
+        "react-native-device-activity",
+        {
+          "appleTeamId": "RP7387Z8TR",
+          "appGroup": "group.com.ramonros22.think"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

@@ -6,7 +6,7 @@ import * as ReactNativeDeviceActivity from "react-native-device-activity";
 import { Text, View } from "../components/Themed";
 import { useConfigStore } from "../store/configStore"; // adjust path if needed
 
-export default function ModalScreen() {
+export default function AppSelectionModal() {
   const router = useRouter();
 
   const familyActivitySelection = useConfigStore(

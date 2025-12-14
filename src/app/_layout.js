@@ -8,6 +8,7 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
@@ -60,16 +61,24 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
 
   return (
-    <SafeAreaProvider>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="modal"
-            options={{ presentation: "modal", headerShown: false }}
-          />
-        </Stack>
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ThemeProvider
+          value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+        >
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="appSelectionModal"
+              options={{ presentation: "modal", headerShown: false }}
+            />
+            <Stack.Screen
+              name="modeSelectionModal"
+              options={{ presentation: "modal", headerShown: false }}
+            />
+          </Stack>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

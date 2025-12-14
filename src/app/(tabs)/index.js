@@ -1,6 +1,8 @@
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, Pressable, StyleSheet } from "react-native";
+import { Alert, Animated, Pressable, StyleSheet } from "react-native";
+
+import Entypo from "@expo/vector-icons/Entypo";
 
 import { SafeAreaView, Text, View } from "../../components/Themed";
 import { readMifare } from "../../helpers/nfcUtils";
@@ -12,15 +14,14 @@ import { useColorScheme } from "../../components/useColorScheme";
 import Colors from "../../constants/Colors";
 
 import { setDenyAppRemoval } from "app-removal-guard";
-import {
-  DeviceContour,
-  Pressable as ThemedPressable,
-} from "../../components/Themed";
+import { Pressable as ThemedPressable } from "../../components/Themed";
+import { AnimatedDeviceContour } from "../../components/animatedComponents";
 
 const SELECTION_ID = "blocked_apps_selection";
 const NFC_TRIGGER_CODE = "123456789";
 
 export default function BlockScreen() {
+  const scale = useRef(new Animated.Value(1)).current;
   const colorScheme = useColorScheme();
   const textColor = Colors[colorScheme ?? "light"].text;
   const router = useRouter();
@@ -166,7 +167,7 @@ export default function BlockScreen() {
   }, [familyActivitySelection, isBlocked, unblockApps, blockApps]);
 
   const handleMode = () => {
-    router.push("/modal");
+    router.push("/modeSelectionModal");
   };
 
   return (
@@ -187,15 +188,43 @@ export default function BlockScreen() {
           <Text style={styles.meta}>hoy</Text>
         </View>
         <View
-          style={{ justifyContent: "center", alignItems: "center", gap: 10 }}
+          style={{ justifyContent: "center", alignItems: "center", gap: 5 }}
         >
-          <Pressable onPress={handleOpenNfcPress}>
-            <DeviceContour width={230} height={230} />
+          <AnimatedDeviceContour onPressOut={handleOpenNfcPress} />
+          <Pressable
+            onPressOut={handleMode}
+            style={({ pressed }) => ({
+              flexDirection: "row",
+              justifyContent: "center",
+              alignItems: "center",
+              marginTop: 20,
+              gap: 10,
+              opacity: pressed ? 0.6 : 1,
+            })}
+          >
+            {({ pressed }) => (
+              <>
+                <Text
+                  style={[
+                    styles.subtitleText,
+                    pressed && styles.subtitleTextPressed,
+                  ]}
+                >
+                  Modo: Deep Focus
+                </Text>
+
+                <Entypo
+                  name="chevron-thin-down"
+                  size={14}
+                  color={pressed ? "rgba(0,0,0,0.5)" : textColor}
+                />
+              </>
+            )}
           </Pressable>
-          <Pressable onPress={handleMode}>
-            <Text style={styles.subtitleText}>Modo: Focus</Text>
-          </Pressable>
-          <Text style={{ marginVertical: 0 }}>Bloqueando x apps</Text>
+
+          <Text colorRole="textSecondary" style={styles.meta}>
+            Bloqueando x apps
+          </Text>
         </View>
         <ThemedPressable
           onPress={handleOpenNfcPress}
@@ -218,7 +247,7 @@ export default function BlockScreen() {
           }}
         >
           <Text style={[styles.meta, { fontWeight: "500" }]}>
-            Activar think.
+            {!isBlocked ? "Activar think" : "Desactivar think"}
           </Text>
         </ThemedPressable>
       </View>
@@ -245,6 +274,9 @@ const styles = StyleSheet.create({
   subtitleText: {
     fontSize: 16,
     fontWeight: "500",
+  },
+  subtitleTextPressed: {
+    opacity: 0.3,
   },
   meta: {
     fontSize: 12,
