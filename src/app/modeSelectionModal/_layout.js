@@ -6,6 +6,7 @@ export default function Layout() {
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="createMode" options={{ headerShown: false }} />
       <Stack.Screen name="editMode" options={{ headerShown: false }} />
+      <Stack.Screen name="createSchedule" options={{ headerShown: false }} />
     </Stack>
   );
 }

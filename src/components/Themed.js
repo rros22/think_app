@@ -5,14 +5,11 @@
 
 import {
   Pressable as DefaultPressable,
-  ScrollView as DefaultScrollView,
   Text as DefaultText,
   View as DefaultView,
 } from "react-native";
 
 import { Animated } from "react-native";
-
-const AnimatedDefaultText = Animated.createAnimatedComponent(DefaultText);
 
 import FullLogo from "../icons/fullLogoSVG";
 import LogoSVG from "../icons/logoSVG";
@@ -72,7 +69,7 @@ export function AnimatedText(props) {
     colorRole
   );
 
-  return <AnimatedDefaultText style={[{ color }, style]} {...otherProps} />;
+  return <Animated.Text style={[{ color }, style]} {...otherProps} />;
 }
 
 export function View(props) {
@@ -125,6 +122,7 @@ export function Pressable(props) {
 export function ScrollView(props) {
   const {
     style,
+    scrollY,
     contentContainerStyle,
     lightColor,
     darkColor,
@@ -138,10 +136,19 @@ export function ScrollView(props) {
   );
 
   return (
-    <DefaultScrollView
+    <Animated.ScrollView
       style={[{ backgroundColor }, style]}
       contentContainerStyle={contentContainerStyle}
       {...otherProps}
+      onScroll={
+        scrollY
+          ? Animated.event(
+              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+              { useNativeDriver: true }
+            )
+          : undefined
+      }
+      scrollEventThrottle={16}
     />
   );
 }
@@ -304,13 +311,15 @@ export function SettingsIcon(props) {
     />
   );
 }
-export function CloseButton(props) {
+
+export function AntIconButton(props) {
   const {
     style,
     colorRole = "card", // background fill role
     lightColor,
     darkColor,
     size = 40,
+    iconName = "close", // NEW: AntDesign icon name
     ...otherProps
   } = props;
 
@@ -319,7 +328,7 @@ export function CloseButton(props) {
     colorRole
   );
 
-  // Icon color should follow theme "text" (or override via lightColor/darkColor if you pass them for text specifically)
+  // Icon color follows theme "text"
   const iconColor = useThemeColor({}, "text");
 
   return (
@@ -338,7 +347,7 @@ export function CloseButton(props) {
         style,
       ]}
     >
-      <AntDesign name="close" size={size / 3} color={iconColor} />
+      <AntDesign name={iconName} size={size / 3} color={iconColor} />
     </DefaultPressable>
   );
 }

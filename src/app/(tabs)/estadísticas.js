@@ -1,25 +1,16 @@
-import {
-  StyleSheet
-} from 'react-native';
+import { StyleSheet } from "react-native";
 
-import { View } from '../../components/Themed';
+import { View } from "../../components/Themed";
 
 export default function StatsScreen() {
-
-
-  return (
-    <View style={styles.container}>
-     
-    </View>
-  );
+  return <View style={styles.container}></View>;
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     gap: 10,
   },
- 
 });

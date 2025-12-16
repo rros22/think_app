@@ -46,9 +46,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="horario"
+        name="rutinas"
         options={{
-          title: "Calendario",
+          title: "Rutinas",
           tabBarIcon: ({ color, size }) => (
             <ScheduleSVG color={color} size={size} />
           ),
