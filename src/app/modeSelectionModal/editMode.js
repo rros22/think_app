@@ -1,12 +1,33 @@
 import { useRouter } from "expo-router";
 import { StyleSheet } from "react-native";
-import { Text, View } from "../../components/Themed";
+import { AntIconButton, Pressable, Text, View } from "../../components/Themed";
+import { useColorScheme } from "../../components/useColorScheme";
+import Colors from "../../constants/Colors";
+
+const buttonSize = 40;
 
 export default function EditMode() {
+  const colorScheme = useColorScheme();
+  const textColor = Colors[colorScheme ?? "light"].text;
   const router = useRouter();
   return (
     <View style={styles.container}>
-      <Text>Edit Mode</Text>
+      <View style={styles.header}>
+        <View style={styles.actionSlot} />
+
+        <Text style={[styles.title]}>Editar modo</Text>
+
+        <AntIconButton size={40} onPress={() => router.back()} />
+      </View>
+      <View style={{ flex: 1 }}></View>
+      <Pressable
+        onPress={() => router.push("/appSelectionModal")}
+        style={[styles.submitButton, { borderColor: textColor }]}
+      >
+        <Text style={[styles.meta, { fontWeight: "500" }]}>
+          Seleccionar Apps
+        </Text>
+      </Pressable>
     </View>
   );
 }
@@ -14,5 +35,32 @@ export default function EditMode() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    alignItems: "center",
+    padding: "5%",
+  },
+  actionSlot: {
+    width: buttonSize,
+  },
+
+  header: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+
+  title: {
+    fontSize: 18,
+    fontWeight: "400",
+  },
+  submitButton: {
+    padding: "6%",
+    borderRadius: 40,
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 30,
+    borderWidth: 1,
   },
 });
