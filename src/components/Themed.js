@@ -10,6 +10,10 @@ import {
   View as DefaultView,
 } from "react-native";
 
+import { Animated } from "react-native";
+
+const AnimatedDefaultText = Animated.createAnimatedComponent(DefaultText);
+
 import FullLogo from "../icons/fullLogoSVG";
 import LogoSVG from "../icons/logoSVG";
 import ScheduleSVG from "../icons/scheduleSVG";
@@ -48,6 +52,23 @@ export function Text(props) {
   );
 
   return <DefaultText style={[{ color }, style]} {...otherProps} />;
+}
+
+export function AnimatedText(props) {
+  const {
+    style,
+    lightColor,
+    darkColor,
+    colorRole = "text",
+    ...otherProps
+  } = props;
+
+  const color = useThemeColor(
+    { light: lightColor, dark: darkColor },
+    colorRole
+  );
+
+  return <AnimatedDefaultText style={[{ color }, style]} {...otherProps} />;
 }
 
 export function View(props) {

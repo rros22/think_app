@@ -2,11 +2,11 @@ import { useRouter } from "expo-router";
 import { StyleSheet } from "react-native";
 import { Text, View } from "../../components/Themed";
 
-export default function CreateMode() {
+export default function EditMode() {
   const router = useRouter();
   return (
     <View style={styles.container}>
-      <Text>Create Mode</Text>
+      <Text>Edit Mode</Text>
     </View>
   );
 }

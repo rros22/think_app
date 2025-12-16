@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, Animated, Pressable, StyleSheet } from "react-native";
+import { Alert, Animated, Platform, Pressable, StyleSheet } from "react-native";
 
 import Entypo from "@expo/vector-icons/Entypo";
 
@@ -13,15 +13,32 @@ import { useConfigStore } from "../../store/configStore"; // adjust path if need
 import { useColorScheme } from "../../components/useColorScheme";
 import Colors from "../../constants/Colors";
 
-import { setDenyAppRemoval } from "app-removal-guard";
+import { setDenyAppRemoval as _setDenyAppRemoval } from "app-removal-guard";
 import { Pressable as ThemedPressable } from "../../components/Themed";
 import { AnimatedDeviceContour } from "../../components/animatedComponents";
 
 const SELECTION_ID = "blocked_apps_selection";
 const NFC_TRIGGER_CODE = "123456789";
 
+/**
+ * Safe wrapper:
+ * - iOS: calls app-removal-guard
+ * - Android/others: no-op (prevents crash)
+ */
+function setDenyAppRemovalSafe(deny) {
+  if (Platform.OS !== "ios") return { supported: false };
+
+  try {
+    const result = _setDenyAppRemoval(!!deny);
+    return { supported: true, result };
+  } catch (error) {
+    console.warn("[AppRemovalGuard] setDenyAppRemoval failed:", error);
+    return { supported: false, error };
+  }
+}
+
 export default function BlockScreen() {
-  const scale = useRef(new Animated.Value(1)).current;
+  const scale = useRef(new Animated.Value(1)).current; // unused but preserved
   const colorScheme = useColorScheme();
   const textColor = Colors[colorScheme ?? "light"].text;
   const router = useRouter();
@@ -61,7 +78,9 @@ export default function BlockScreen() {
       if (!ok) return;
 
       // On startup: enforce current intended policy (strictMode + blocked)
-      const r = setDenyAppRemoval(!!(isBlocked && preventDeletionWhileBlocked));
+      const r = setDenyAppRemovalSafe(
+        !!(isBlocked && preventDeletionWhileBlocked)
+      );
       console.log("[AppRemovalGuard] init policy =>", r);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -94,7 +113,7 @@ export default function BlockScreen() {
     }
 
     // Apply app removal protection based on strictMode preference
-    const r = setDenyAppRemoval(!!preventDeletionWhileBlocked);
+    const r = setDenyAppRemovalSafe(!!preventDeletionWhileBlocked);
     console.log("[AppRemovalGuard] setDenyAppRemoval(on block) =>", r);
 
     ReactNativeDeviceActivity.blockSelection({
@@ -129,7 +148,7 @@ export default function BlockScreen() {
     });
 
     // Always allow removal again when unblocked
-    const r = setDenyAppRemoval(false);
+    const r = setDenyAppRemovalSafe(false);
     console.log("[AppRemovalGuard] setDenyAppRemoval(on unblock) =>", r);
 
     setIsBlocked(false);
@@ -187,6 +206,7 @@ export default function BlockScreen() {
           <Text style={styles.subtitleText}>0h 0m</Text>
           <Text style={styles.meta}>hoy</Text>
         </View>
+
         <View
           style={{ justifyContent: "center", alignItems: "center", gap: 5 }}
         >
@@ -226,6 +246,7 @@ export default function BlockScreen() {
             Bloqueando x apps
           </Text>
         </View>
+
         <ThemedPressable
           onPress={handleOpenNfcPress}
           style={{
