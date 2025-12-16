@@ -8,6 +8,7 @@ import LogoSVG from "../../icons/logoSVG";
 import ScheduleSVG from "../../icons/scheduleSVG";
 import SettingsSVG from "../../icons/settingsSVG";
 import StatsSVG from "../../icons/statsSVG";
+import { useConfigStore } from "../../store/configStore";
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props) {
@@ -16,14 +17,23 @@ function TabBarIcon(props) {
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const isBlocked = useConfigStore((s) => s.isBlocked);
+
+  const theme = isBlocked ? "blocked" : colorScheme;
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
         headerShown: false,
+
+        tabBarActiveTintColor: Colors[theme].tint,
+        tabBarInactiveTintColor: Colors[theme].tabIconDefault,
+
+        // These two make the actual bar match the blocked palette
+        tabBarStyle: {
+          backgroundColor: Colors[theme].card,
+          borderTopColor: Colors[theme].separator,
+        },
       }}
     >
       <Tabs.Screen

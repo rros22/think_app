@@ -16,8 +16,7 @@ import { setDenyAppRemoval } from "app-removal-guard";
 import { useConfigStore } from "../../store/configStore"; // adjust path if needed
 
 export default function SettingsScreen() {
-  const colorScheme = useColorScheme();
-  const textColor = Colors[colorScheme ?? "light"].text;
+  const colorScheme = useColorScheme() ?? "light";
 
   const isBlocked = useConfigStore((s) => s.isBlocked);
   const preventDeletionWhileBlocked = useConfigStore(
@@ -26,6 +25,11 @@ export default function SettingsScreen() {
   const setPreventDeletionWhileBlocked = useConfigStore(
     (s) => s.setPreventDeletionWhileBlocked
   );
+
+  // ✅ Effective theme: force blocked when blocked, otherwise follow system
+  const theme = isBlocked ? "blocked" : colorScheme;
+  const textColor = Colors[theme].text;
+  const separatorColor = Colors[theme].separator;
 
   const handleToggleStrictMode = useCallback(
     (value) => {
@@ -81,7 +85,7 @@ export default function SettingsScreen() {
           <Pressable
             colorRole="background"
             style={{
-              marginTop: "10",
+              marginTop: 10,
               padding: "6%",
               borderRadius: 40,
               width: "100%",
@@ -91,7 +95,7 @@ export default function SettingsScreen() {
               borderColor: textColor,
             }}
             onPress={() => {
-              // TODO: implement logout logic
+              // TODO: implement share logic
             }}
           >
             <Text style={[styles.meta, { fontWeight: "600" }]}>
@@ -107,7 +111,7 @@ export default function SettingsScreen() {
             5 restantes
           </Text>
 
-          <View colorRole="separator" style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: separatorColor }]} />
 
           <View colorRole="card" style={styles.row}>
             <Text style={styles.rowText}>Modo estricto</Text>
@@ -130,7 +134,7 @@ export default function SettingsScreen() {
             ¿Por qué usar think?
           </Text>
 
-          <View colorRole="separator" style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: separatorColor }]} />
 
           <Text colorRole="textSecondary" style={styles.secondary}>
             Política de Privacidad
@@ -148,13 +152,13 @@ export default function SettingsScreen() {
             ¿Problemas con think.?
           </Text>
 
-          <View colorRole="separator" style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: separatorColor }]} />
 
           <Text colorRole="textSecondary" style={styles.secondary}>
             ¿Necesitas ayuda?
           </Text>
 
-          <View colorRole="separator" style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: separatorColor }]} />
 
           <Text colorRole="textSecondary" style={styles.secondary}>
             Borrar cuenta
@@ -164,21 +168,21 @@ export default function SettingsScreen() {
         {/* Cerrar sesión */}
         <Pressable
           style={{
-            marginTop: "10",
+            marginTop: 10,
             padding: "6%",
             borderRadius: 40,
             width: "100%",
             justifyContent: "center",
             alignItems: "center",
+
             borderWidth: 1,
             borderColor: textColor,
+
             // iOS
-            shadowColor: "#000",
+            shadowColor: separatorColor,
             shadowOffset: { width: 6, height: 6 },
             shadowOpacity: 0.15,
             shadowRadius: 12,
-            borderWidth: 1,
-            borderColor: textColor,
 
             // Android
             elevation: 8,
@@ -248,28 +252,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingVertical: 6,
-  },
-
-  logoutButton: {
-    width: "100%",
-    height: 48,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 10,
-  },
-
-  logoutText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-
-  primaryActionButton: {
-    width: "100%",
-    height: 44,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 12,
   },
 });

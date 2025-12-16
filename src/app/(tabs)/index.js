@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, Animated, Platform, Pressable, StyleSheet } from "react-native";
+import { Alert, Platform, Pressable, StyleSheet } from "react-native";
 
 import Entypo from "@expo/vector-icons/Entypo";
 
@@ -38,15 +38,17 @@ function setDenyAppRemovalSafe(deny) {
 }
 
 export default function BlockScreen() {
-  const scale = useRef(new Animated.Value(1)).current; // unused but preserved
-  const colorScheme = useColorScheme();
-  const textColor = Colors[colorScheme ?? "light"].text;
   const router = useRouter();
 
   const familyActivitySelection = useConfigStore(
     (s) => s.familyActivitySelection
   );
+  const colorScheme = useColorScheme() ?? "light";
   const isBlocked = useConfigStore((s) => s.isBlocked);
+  const theme = isBlocked ? "blocked" : colorScheme;
+  const textColor = Colors[theme].text;
+  const separatorColor = Colors[theme].separator;
+  const pressedIconColor = Colors[theme].textSecondary;
   const setIsBlocked = useConfigStore((s) => s.setIsBlocked);
   const preventDeletionWhileBlocked = useConfigStore(
     (s) => s.preventDeletionWhileBlocked
@@ -259,6 +261,7 @@ export default function BlockScreen() {
             }}
           />
           <Pressable
+            disabled={isBlocked}
             onPressOut={handleMode}
             style={({ pressed }) => ({
               flexDirection: "row",
@@ -266,7 +269,7 @@ export default function BlockScreen() {
               alignItems: "center",
               marginTop: 20,
               gap: 10,
-              opacity: pressed ? 0.6 : 1,
+              opacity: isBlocked ? 1 : pressed ? 0.6 : 1,
             })}
           >
             {({ pressed }) => (
@@ -274,17 +277,20 @@ export default function BlockScreen() {
                 <Text
                   style={[
                     styles.subtitleText,
-                    pressed && styles.subtitleTextPressed,
+                    !isBlocked && pressed && styles.subtitleTextPressed,
                   ]}
                 >
                   Modo: Deep Focus
                 </Text>
 
-                <Entypo
-                  name="chevron-thin-down"
-                  size={14}
-                  color={pressed ? "rgba(0,0,0,0.5)" : textColor}
-                />
+                {/* 🔽 Chevron only when NOT blocked */}
+                {!isBlocked && (
+                  <Entypo
+                    name="chevron-thin-down"
+                    size={14}
+                    color={pressed ? pressedIconColor : textColor}
+                  />
+                )}
               </>
             )}
           </Pressable>
@@ -303,12 +309,13 @@ export default function BlockScreen() {
             justifyContent: "center",
             alignItems: "center",
             // iOS
-            shadowColor: "#000",
+
             shadowOffset: { width: 6, height: 6 },
             shadowOpacity: 0.15,
             shadowRadius: 12,
             borderWidth: 1,
-            borderColor: textColor,
+            shadowColor: Colors[theme].separator, // or Colors[theme].text for strong contrast
+            borderColor: Colors[theme].text,
 
             // Android
             elevation: 8,

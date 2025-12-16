@@ -22,4 +22,14 @@ export default {
     tabIconDefault: "#ccc",
     tabIconSelected: tintColorDark,
   },
+  blocked: {
+    text: "#FFFFFF",
+    textSecondary: "rgba(255,255,255,0.75)",
+    separator: "rgba(255,255,255,0.25)",
+    card: "#8B0000", // dark red
+    background: "#B00020", // material red tone
+    tint: "#FFFFFF",
+    tabIconDefault: "rgba(255,255,255,0.6)",
+    tabIconSelected: "#FFFFFF",
+  },
 };
