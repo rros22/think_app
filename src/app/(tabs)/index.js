@@ -154,6 +154,47 @@ export default function BlockScreen() {
     setIsBlocked(false);
   }, [requestAuthIfNeeded, setIsBlocked]);
 
+  // Remote blocking / NFC unlock
+  const handleRemoteBlock = useCallback(async () => {
+    // Require a configured selection
+    if (!familyActivitySelection) {
+      Alert.alert(
+        "No Apps Selected",
+        "Please select apps to block before using remote block."
+      );
+      return;
+    }
+
+    // 🔓 UNLOCK PATH (NFC required)
+    if (isBlocked) {
+      const code = await readMifare();
+      console.log("NFC code (remote unlock):", code);
+
+      if (code !== NFC_TRIGGER_CODE) return;
+
+      Alert.alert(
+        "Unblock Apps?",
+        "This NFC tag will unblock the selected apps.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Unblock", style: "destructive", onPress: unblockApps },
+        ]
+      );
+      return;
+    }
+
+    // BLOCK PATH (no NFC required)
+    Alert.alert(
+      "Activar think. remotamente?",
+      "Para desbloquear necesitarás el dispositivo físico.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Block", style: "destructive", onPress: blockApps },
+      ]
+    );
+  }, [familyActivitySelection, isBlocked, blockApps, unblockApps]);
+
+  //NFC blocking
   const handleOpenNfcPress = useCallback(async () => {
     const code = await readMifare();
     console.log("NFC code:", code);
@@ -210,7 +251,13 @@ export default function BlockScreen() {
         <View
           style={{ justifyContent: "center", alignItems: "center", gap: 5 }}
         >
-          <AnimatedDeviceContour onPressOut={handleOpenNfcPress} />
+          <AnimatedDeviceContour
+            onLongPress={handleRemoteBlock} // or handleOpenNfcPress
+            delayLongPress={300}
+            onPressOut={() => {
+              /* optional: reset extra UI */
+            }}
+          />
           <Pressable
             onPressOut={handleMode}
             style={({ pressed }) => ({

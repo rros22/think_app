@@ -8,6 +8,8 @@ export const AnimatedDeviceContour = ({
   height,
   onPressIn,
   onPressOut,
+  onLongPress,
+  delayLongPress = 800, // sensible default
 }) => {
   const scale = useRef(new Animated.Value(1)).current;
 
@@ -16,7 +18,8 @@ export const AnimatedDeviceContour = ({
       toValue: 0.95,
       useNativeDriver: true,
     }).start();
-    if (onPressIn) onPressIn(); // Allow for custom behavior
+
+    onPressIn?.();
   };
 
   const handlePressOut = () => {
@@ -24,11 +27,22 @@ export const AnimatedDeviceContour = ({
       toValue: 1,
       useNativeDriver: true,
     }).start();
-    if (onPressOut) onPressOut(); // Allow for custom behavior
+
+    onPressOut?.();
+  };
+
+  const handleLongPress = () => {
+    // This is the "activate after hold" callback
+    onLongPress?.();
   };
 
   return (
-    <Pressable onPressIn={handlePressIn} onPressOut={handlePressOut}>
+    <Pressable
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onLongPress={handleLongPress}
+      delayLongPress={delayLongPress}
+    >
       <Animated.View style={{ transform: [{ scale }] }}>
         <DeviceContour width={width} height={height} />
       </Animated.View>
