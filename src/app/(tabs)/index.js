@@ -43,24 +43,22 @@ export default function BlockScreen() {
   const familyActivitySelection = useConfigStore(
     (s) => s.familyActivitySelection
   );
-  const colorScheme = useColorScheme() ?? "light";
-  const isBlocked = useConfigStore((s) => s.isBlocked);
-  const theme = isBlocked ? "blocked" : colorScheme;
-  const textColor = Colors[theme].text;
-  const separatorColor = Colors[theme].separator;
-  const pressedIconColor = Colors[theme].textSecondary;
-  const setIsBlocked = useConfigStore((s) => s.setIsBlocked);
   const preventDeletionWhileBlocked = useConfigStore(
     (s) => s.preventDeletionWhileBlocked
   );
+  const isBlocked = useConfigStore((s) => s.isBlocked);
 
+  const colorScheme = useColorScheme() ?? "light";
+  const theme = isBlocked ? "blocked" : colorScheme;
+  const textColor = Colors[theme].text;
+  const pressedIconColor = Colors[theme].textSecondary;
+  const setIsBlocked = useConfigStore((s) => s.setIsBlocked);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const authRequestedRef = useRef(false);
 
   const requestAuthIfNeeded = useCallback(async () => {
     if (authRequestedRef.current) return isAuthorized;
     authRequestedRef.current = true;
-
     try {
       const result = await ReactNativeDeviceActivity.requestAuthorization?.();
       const ok = typeof result === "boolean" ? result : true;

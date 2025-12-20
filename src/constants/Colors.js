@@ -4,7 +4,7 @@ const tintColorDark = "#fff";
 export default {
   light: {
     text: "#000",
-    textSecondary: "rgb(60, 60, 67)",
+    textSecondary: "rgba(72, 72, 80, 1)",
     separator: "rgb(60, 60, 67)",
     card: "#fff",
 
