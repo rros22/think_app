@@ -1,12 +1,23 @@
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
+
 import { StyleSheet } from "react-native";
-import { AntIconButton, Pressable, Text, View } from "../../components/Themed";
-import { useColorScheme } from "../../components/useColorScheme";
-import Colors from "../../constants/Colors";
+import {
+  AntIconButton,
+  Pressable,
+  Text,
+  View,
+} from "../../../components/Themed";
+import { useColorScheme } from "../../../components/useColorScheme";
+import Colors from "../../../constants/Colors";
 
 const buttonSize = 40;
 
 export default function EditMode() {
+  const { id } = useLocalSearchParams();
+  const modeId = Array.isArray(id) ? id[0] : id;
+
+  const isEdit = modeId == "edit";
+
   const colorScheme = useColorScheme();
   const textColor = Colors[colorScheme ?? "light"].text;
   const router = useRouter();
@@ -15,7 +26,9 @@ export default function EditMode() {
       <View style={styles.header}>
         <View style={styles.actionSlot} />
 
-        <Text style={[styles.title]}>Editar modo</Text>
+        <Text style={styles.title}>
+          {isEdit ? "Editar modo" : "Crear modo"}
+        </Text>
 
         <AntIconButton size={40} onPress={() => router.back()} />
       </View>

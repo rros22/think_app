@@ -1,22 +1,21 @@
+import { AntDesign } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React from "react";
-import { Animated, StyleSheet } from "react-native";
-import CustomList from "../../components/CustomList";
 import {
-  AnimatedText,
+  Pressable as DefaultPressable,
+  FlatList,
+  StyleSheet,
+} from "react-native";
+import {
   AntIconButton,
   Pressable,
   Text,
+  useThemeColor,
   View,
 } from "../../components/Themed";
 import { useColorScheme } from "../../components/useColorScheme";
 import Colors from "../../constants/Colors";
 
 const buttonSize = 40;
-
-// Delay + fast fade tuning
-const SHOW_AFTER_Y = 25; // stay invisible for this many px AFTER the list header starts scrolling away
-const FADE_DISTANCE = 20; // fade-in happens over this many px (smaller = faster)
 
 // test data
 const DATA = [
@@ -25,23 +24,37 @@ const DATA = [
   { id: "58694a0f-3da1-471f-bd96-145571e29d72", title: "Trabajo" },
 ];
 
+const Item = ({ title, onEdit }) => (
+  <View colorRole="card" style={styles.item}>
+    <Text style={styles.title}>{title}</Text>
+    <DefaultPressable onPress={onEdit}>
+      {({ pressed }) => (
+        <Text style={[styles.title, { opacity: pressed ? 0.4 : 1 }]}>
+          Editar
+        </Text>
+      )}
+    </DefaultPressable>
+  </View>
+);
+
+const Footer = ({ onCreate }) => {
+  const iconColor = useThemeColor({}, "text");
+
+  return (
+    <Pressable colorRole="secondaryCard" style={styles.item} onPress={onCreate}>
+      <Text style={styles.title}>Crear modo</Text>
+      <AntDesign name="plus" size={18} color={iconColor} />
+    </Pressable>
+  );
+};
+
 export default function ModeSelection() {
   const colorScheme = useColorScheme();
   const textColor = Colors[colorScheme ?? "light"].text;
   const router = useRouter();
 
-  const scrollY = React.useRef(new Animated.Value(0)).current;
-
-  // Compute thresholds INSIDE the component (because listHeaderHeight is state)
-  const start = Math.max(0, SHOW_AFTER_Y);
-  const end = start + FADE_DISTANCE;
-
-  // Invisible at first, then quick fade after the delay distance is covered
-  const titleOpacity = scrollY.interpolate({
-    inputRange: [0, start, end],
-    outputRange: [0, 0, 1],
-    extrapolate: "clamp",
-  });
+  const onEdit = () => router.push("/modeSelectionModal/editMode/edit");
+  const onCreate = () => router.push("/modeSelectionModal/editMode/create");
 
   //confimation handler
   const handleConfirmation = () => {
@@ -54,19 +67,19 @@ export default function ModeSelection() {
       <View style={styles.header}>
         <View style={styles.actionSlot} />
 
-        <AnimatedText style={[styles.title, { opacity: titleOpacity }]}>
-          Seleccionar modo
-        </AnimatedText>
+        <Text style={[styles.title]}>Seleccionar modo</Text>
 
         <AntIconButton size={40} onPress={() => router.back()} />
       </View>
 
-      <CustomList
+      <FlatList
+        style={{ flex: 1, width: "100%" }}
         data={DATA}
-        title="Seleccionar Modo"
-        scrollY={scrollY}
-        onEdit={(id) => router.push("/modeSelectionModal/editMode")}
-        onCreate={() => router.push("/modeSelectionModal/createMode")}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <Item title={item.title} onEdit={() => onEdit(item.id)} />
+        )}
+        ListFooterComponent={<Footer onCreate={onCreate} />}
       />
 
       <Pressable
@@ -96,6 +109,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 20,
+  },
+  item: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 30,
+    marginVertical: 8,
+    borderRadius: 15,
   },
 
   title: {

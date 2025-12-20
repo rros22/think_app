@@ -23,7 +23,7 @@ export default function TabLayout() {
 
   return (
     <Tabs
-      //detachInactiveScreens={false}
+      detachInactiveScreens={false}
       screenOptions={{
         headerShown: false,
         animation: "fade",
@@ -33,8 +33,12 @@ export default function TabLayout() {
 
         // These two make the actual bar match the blocked palette
         tabBarStyle: {
+          //height: 72,
           backgroundColor: Colors[theme].card,
           borderTopColor: Colors[theme].separator,
+        },
+        tabBarIconStyle: {
+          marginTop: 5,
         },
       }}
     >

@@ -44,7 +44,9 @@ const Footer = ({ onCreate }) => {
 export default function CustomList({
   data,
   title = "Seleccionar Modo",
+  titleOn = true,
   FooterComponent = Footer, // default footer component
+  ItemComponent = Item,
   onEdit,
   onCreate,
   style,
@@ -55,10 +57,10 @@ export default function CustomList({
       style={[{ width: "100%" }, style]}
       data={data}
       renderItem={({ item }) => (
-        <Item title={item.title} onEdit={() => onEdit(item.id)} />
+        <ItemComponent title={item.title} onEdit={() => onEdit(item.id)} />
       )}
       keyExtractor={(item) => item.id}
-      ListHeaderComponent={<Header title={title} />}
+      ListHeaderComponent={titleOn && <Header title={title} />}
       ListFooterComponent={<FooterComponent onCreate={onCreate} />}
       onScroll={
         scrollY

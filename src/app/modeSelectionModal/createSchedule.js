@@ -1,25 +1,13 @@
 import { useRouter } from "expo-router";
 import React from "react";
-import { Animated, StyleSheet } from "react-native";
-import {
-  AnimatedText,
-  AntIconButton,
-  Pressable,
-  Text,
-  View,
-} from "../../components/Themed";
+import { FlatList, StyleSheet } from "react-native";
+import { AntIconButton, Pressable, Text, View } from "../../components/Themed";
 import { useColorScheme } from "../../components/useColorScheme";
 import Colors from "../../constants/Colors";
-
-import CustomList from "../../components/CustomList";
 
 const buttonSize = 40;
 
 const weekDays = ["L", "M", "X", "J", "V", "S", "D"];
-
-// Delay + fast fade tuning
-const SHOW_AFTER_Y = 25;
-const FADE_DISTANCE = 20;
 
 const ScheduleForm = () => {
   const colorScheme = useColorScheme() ?? "light";
@@ -213,17 +201,6 @@ export default function ScheduleCreation() {
   const textColor = Colors[colorScheme ?? "light"].text;
   const router = useRouter();
 
-  const scrollY = React.useRef(new Animated.Value(0)).current;
-
-  const start = Math.max(0, SHOW_AFTER_Y);
-  const end = start + FADE_DISTANCE;
-
-  const titleOpacity = scrollY.interpolate({
-    inputRange: [0, start, end],
-    outputRange: [0, 0, 1],
-    extrapolate: "clamp",
-  });
-
   const handleConfirmation = () => {
     router.back();
   };
@@ -232,22 +209,13 @@ export default function ScheduleCreation() {
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.actionSlot} />
-
-        <AnimatedText style={[styles.title, { opacity: titleOpacity }]}>
-          Crear Rutina
-        </AnimatedText>
-
+        <Text style={[styles.title]}>Crear Rutina</Text>
         <AntIconButton size={40} onPress={() => router.back()} />
       </View>
-
-      <CustomList
-        title="Crear Rutina"
-        scrollY={scrollY}
-        FooterComponent={ScheduleForm}
-        onEdit={(id) => router.push("/modeSelectionModal/editMode")}
-        onCreate={() => router.push("/modeSelectionModal/createMode")}
+      <FlatList
+        style={{ width: "100%", flex: 1 }}
+        ListFooterComponent={ScheduleForm}
       />
-
       <Pressable
         onPress={handleConfirmation}
         style={[styles.submitButton, { borderColor: textColor }]}
@@ -294,6 +262,10 @@ const styles = StyleSheet.create({
   divider: {
     height: StyleSheet.hairlineWidth,
     marginVertical: -20,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "400",
   },
   subTitle: {
     fontSize: 14,
