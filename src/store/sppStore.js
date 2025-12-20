@@ -4,7 +4,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 
 export const useAppStore = create(
   persist(
-    (set, get) => ({
+    (set) => ({
       data: 0,
 
       setData: (newValue) => {
