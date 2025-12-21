@@ -1,6 +1,8 @@
 import { AntDesign } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useEffect, useMemo } from "react";
 import {
+  Alert,
   Pressable as DefaultPressable,
   FlatList,
   StyleSheet,
@@ -15,26 +17,34 @@ import {
 import { useColorScheme } from "../../components/useColorScheme";
 import Colors from "../../constants/Colors";
 
+import { useAppStore } from "../../store/appConfigStore";
+
 const buttonSize = 40;
 
-// test data
-const DATA = [
-  { id: "bd7acbea-c1b1-46c2-aed5-3ad53abb28ba", title: "Estudio" },
-  { id: "3ac68afc-c605-48d3-a4f8-fbd91aa97f63", title: "Familia" },
-  { id: "58694a0f-3da1-471f-bd96-145571e29d72", title: "Trabajo" },
-];
+const Item = ({ title, isSelected, onSelect, onEdit }) => (
+  <DefaultPressable onPress={onSelect}>
+    {({ pressed }) => (
+      <View
+        colorRole="card"
+        style={[
+          styles.item,
+          {
+            opacity: pressed ? 0.5 : isSelected ? 1 : 0.35,
+          },
+        ]}
+      >
+        <Text style={styles.subTitle}>{title}</Text>
 
-const Item = ({ title, onEdit }) => (
-  <View colorRole="card" style={styles.item}>
-    <Text style={styles.title}>{title}</Text>
-    <DefaultPressable onPress={onEdit}>
-      {({ pressed }) => (
-        <Text style={[styles.title, { opacity: pressed ? 0.4 : 1 }]}>
-          Editar
-        </Text>
-      )}
-    </DefaultPressable>
-  </View>
+        <DefaultPressable onPress={onEdit} hitSlop={10}>
+          {({ pressed: editPressed }) => (
+            <Text style={[styles.subTitle, { opacity: editPressed ? 0.4 : 1 }]}>
+              Editar
+            </Text>
+          )}
+        </DefaultPressable>
+      </View>
+    )}
+  </DefaultPressable>
 );
 
 const Footer = ({ onCreate }) => {
@@ -42,7 +52,7 @@ const Footer = ({ onCreate }) => {
 
   return (
     <Pressable colorRole="secondaryCard" style={styles.item} onPress={onCreate}>
-      <Text style={styles.title}>Crear modo</Text>
+      <Text style={styles.subTitle}>Crear modo</Text>
       <AntDesign name="plus" size={18} color={iconColor} />
     </Pressable>
   );
@@ -53,14 +63,51 @@ export default function ModeSelection() {
   const textColor = Colors[colorScheme ?? "light"].text;
   const router = useRouter();
 
-  const onEdit = () => router.push("/modeSelectionModal/editMode/edit");
-  const onCreate = () => router.push("/modeSelectionModal/editMode/create");
+  //obtain user defined modes in order from the store
+  const modeOrder = useAppStore((state) => state.modeOrder);
+  const modesById = useAppStore((state) => state.modesById);
+  const maxModes = useAppStore((state) => state.maxModes);
+
+  const canCreate = modeOrder.length < maxModes;
+
+  //select which mode to activate
+  const selectedModeId = useAppStore((state) => state.selectedModeId);
+  const setSelectedModeId = useAppStore((state) => state.setSelectedModeId);
+
+  const modes = useMemo(
+    () => modeOrder.map((id) => modesById[id]).filter(Boolean),
+    [modeOrder, modesById]
+  );
+
+  //Dynamics routs to the create mode or to edit a particular mode
+  const onEdit = (id) => router.push(`/modeSelectionModal/editMode/${id}`);
+  const onCreate = () => {
+    if (!canCreate) {
+      Alert.alert(
+        "Límite alcanzado",
+        `Solo puedes tener hasta ${maxModes} modos. Elimina uno para crear otro.`
+      );
+      return;
+    }
+
+    router.push("/modeSelectionModal/editMode/create");
+  };
 
   //confimation handler
   const handleConfirmation = () => {
     //need to implement the logic
     router.back();
   };
+
+  useEffect(() => {
+    const name = selectedModeId ? modesById[selectedModeId]?.name : null;
+    console.log(
+      "[ModeSelection] selectedModeId:",
+      selectedModeId,
+      "name:",
+      name
+    );
+  }, [selectedModeId, modesById]);
 
   return (
     <View style={styles.container}>
@@ -74,10 +121,18 @@ export default function ModeSelection() {
 
       <FlatList
         style={{ flex: 1, width: "100%" }}
-        data={DATA}
+        data={modes}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <Item title={item.title} onEdit={() => onEdit(item.id)} />
+          <Item
+            title={item.name}
+            isSelected={item.id === selectedModeId}
+            onSelect={() => {
+              setSelectedModeId(item.id);
+              router.back();
+            }}
+            onEdit={() => onEdit(item.id)}
+          />
         )}
         ListFooterComponent={<Footer onCreate={onCreate} />}
       />
@@ -122,6 +177,11 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: 18,
+    fontWeight: "400",
+  },
+
+  subTitle: {
+    fontSize: 16,
     fontWeight: "400",
   },
 

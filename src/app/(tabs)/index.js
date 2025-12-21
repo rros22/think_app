@@ -4,17 +4,22 @@ import { Alert, Platform, Pressable, StyleSheet } from "react-native";
 
 import Entypo from "@expo/vector-icons/Entypo";
 
-import { SafeAreaView, Text, View } from "../../components/Themed";
+import {
+  SafeAreaView,
+  Text,
+  Pressable as ThemedPressable,
+  View,
+} from "../../components/Themed";
 import { readMifare } from "../../helpers/nfcUtils";
 
 import * as ReactNativeDeviceActivity from "react-native-device-activity";
+import { useAppStore } from "../../store/appConfigStore";
 import { useConfigStore } from "../../store/configStore"; // adjust path if needed
 
 import { useColorScheme } from "../../components/useColorScheme";
 import Colors from "../../constants/Colors";
 
 import { setDenyAppRemoval as _setDenyAppRemoval } from "app-removal-guard";
-import { Pressable as ThemedPressable } from "../../components/Themed";
 import { AnimatedDeviceContour } from "../../components/animatedComponents";
 
 const SELECTION_ID = "blocked_apps_selection";
@@ -38,21 +43,31 @@ function setDenyAppRemovalSafe(deny) {
 }
 
 export default function BlockScreen() {
+  const selectedMode = useAppStore((state) =>
+    state.selectedModeId ? state.modesById[state.selectedModeId] : null
+  );
+
+  const selectedBlockedSelection = useAppStore((state) =>
+    state.selectedModeId
+      ? state.getModeBlockedAppSelection(state.selectedModeId)
+      : null
+  );
+
+  const isBlockingActive = useAppStore((state) => state.isBlockingActive);
+  const setIsBlockingActive = useAppStore((state) => state.setIsBlockingActive);
+
+  const modeOrder = useAppStore((state) => state.modeOrder);
+  const hasAnyModes = modeOrder.length > 0;
+
   const router = useRouter();
 
-  const familyActivitySelection = useConfigStore(
-    (s) => s.familyActivitySelection
-  );
   const preventDeletionWhileBlocked = useConfigStore(
     (s) => s.preventDeletionWhileBlocked
   );
-  const isBlocked = useConfigStore((s) => s.isBlocked);
 
   const colorScheme = useColorScheme() ?? "light";
-  const theme = isBlocked ? "blocked" : colorScheme;
-  const textColor = Colors[theme].text;
-  const pressedIconColor = Colors[theme].textSecondary;
-  const setIsBlocked = useConfigStore((s) => s.setIsBlocked);
+  const textColor = Colors[colorScheme].text;
+  const pressedIconColor = Colors[colorScheme].textSecondary;
   const [isAuthorized, setIsAuthorized] = useState(false);
   const authRequestedRef = useRef(false);
 
@@ -79,7 +94,7 @@ export default function BlockScreen() {
 
       // On startup: enforce current intended policy (strictMode + blocked)
       const r = setDenyAppRemovalSafe(
-        !!(isBlocked && preventDeletionWhileBlocked)
+        !!(isBlockingActive && preventDeletionWhileBlocked)
       );
       console.log("[AppRemovalGuard] init policy =>", r);
     })();
@@ -87,15 +102,15 @@ export default function BlockScreen() {
   }, []);
 
   const persistSelectionIfNeeded = useCallback(() => {
-    if (!familyActivitySelection) return false;
+    if (!selectedBlockedSelection) return false;
 
     ReactNativeDeviceActivity.setFamilyActivitySelectionId({
       id: SELECTION_ID,
-      familyActivitySelection,
+      familyActivitySelection: selectedBlockedSelection,
     });
 
     return true;
-  }, [familyActivitySelection]);
+  }, [selectedBlockedSelection]);
 
   const blockApps = useCallback(async () => {
     const ok = await requestAuthIfNeeded();
@@ -120,11 +135,11 @@ export default function BlockScreen() {
       activitySelectionId: SELECTION_ID,
     });
 
-    setIsBlocked(true);
+    setIsBlockingActive(true);
   }, [
     requestAuthIfNeeded,
     persistSelectionIfNeeded,
-    setIsBlocked,
+    setIsBlockingActive,
     preventDeletionWhileBlocked,
   ]);
 
@@ -151,13 +166,13 @@ export default function BlockScreen() {
     const r = setDenyAppRemovalSafe(false);
     console.log("[AppRemovalGuard] setDenyAppRemoval(on unblock) =>", r);
 
-    setIsBlocked(false);
-  }, [requestAuthIfNeeded, setIsBlocked]);
+    setIsBlockingActive(false);
+  }, [requestAuthIfNeeded, setIsBlockingActive]);
 
   // Remote blocking / NFC unlock
   const handleRemoteBlock = useCallback(async () => {
     // Require a configured selection
-    if (!familyActivitySelection) {
+    if (!selectedBlockedSelection) {
       Alert.alert(
         "No Apps Selected",
         "Please select apps to block before using remote block."
@@ -166,7 +181,7 @@ export default function BlockScreen() {
     }
 
     // 🔓 UNLOCK PATH (NFC required)
-    if (isBlocked) {
+    if (isBlockingActive) {
       const code = await readMifare();
       console.log("NFC code (remote unlock):", code);
 
@@ -192,7 +207,7 @@ export default function BlockScreen() {
         { text: "Block", style: "destructive", onPress: blockApps },
       ]
     );
-  }, [familyActivitySelection, isBlocked, blockApps, unblockApps]);
+  }, [selectedBlockedSelection, isBlockingActive, blockApps, unblockApps]);
 
   //NFC blocking
   const handleOpenNfcPress = useCallback(async () => {
@@ -201,7 +216,7 @@ export default function BlockScreen() {
 
     if (code !== NFC_TRIGGER_CODE) return;
 
-    if (!familyActivitySelection) {
+    if (!selectedBlockedSelection) {
       Alert.alert(
         "No Apps Selected",
         "Please select apps to block before using the NFC tag."
@@ -209,7 +224,7 @@ export default function BlockScreen() {
       return;
     }
 
-    if (isBlocked) {
+    if (isBlockingActive) {
       Alert.alert(
         "Unblock Apps?",
         "This NFC tag will unblock the selected apps.",
@@ -224,9 +239,13 @@ export default function BlockScreen() {
         { text: "Block", style: "destructive", onPress: blockApps },
       ]);
     }
-  }, [familyActivitySelection, isBlocked, unblockApps, blockApps]);
+  }, [selectedBlockedSelection, isBlockingActive, unblockApps, blockApps]);
 
   const handleMode = () => {
+    if (!hasAnyModes) {
+      router.push("/modeSelectionModal/editMode/create");
+      return;
+    }
     router.push("/modeSelectionModal");
   };
 
@@ -259,7 +278,7 @@ export default function BlockScreen() {
             }}
           />
           <Pressable
-            disabled={isBlocked}
+            disabled={isBlockingActive}
             onPressOut={handleMode}
             style={({ pressed }) => ({
               flexDirection: "row",
@@ -267,7 +286,7 @@ export default function BlockScreen() {
               alignItems: "center",
               marginTop: 20,
               gap: 10,
-              opacity: isBlocked ? 1 : pressed ? 0.6 : 1,
+              opacity: isBlockingActive ? 1 : pressed ? 0.6 : 1,
             })}
           >
             {({ pressed }) => (
@@ -275,20 +294,29 @@ export default function BlockScreen() {
                 <Text
                   style={[
                     styles.subtitleText,
-                    !isBlocked && pressed && styles.subtitleTextPressed,
+                    !isBlockingActive && pressed && styles.subtitleTextPressed,
                   ]}
                 >
-                  Modo: Deep Focus
+                  {hasAnyModes
+                    ? `Modo: ${selectedMode?.name ?? "Seleccionar modo"}`
+                    : "Crear modo"}
                 </Text>
 
                 {/* 🔽 Chevron only when NOT blocked */}
-                {!isBlocked && (
-                  <Entypo
-                    name="chevron-thin-down"
-                    size={14}
-                    color={pressed ? pressedIconColor : textColor}
-                  />
-                )}
+                {!isBlockingActive &&
+                  (hasAnyModes ? (
+                    <Entypo
+                      name="chevron-thin-down"
+                      size={14}
+                      color={pressed ? pressedIconColor : textColor}
+                    />
+                  ) : (
+                    <Entypo
+                      name="plus"
+                      size={18}
+                      color={pressed ? pressedIconColor : textColor}
+                    />
+                  ))}
               </>
             )}
           </Pressable>
@@ -312,15 +340,15 @@ export default function BlockScreen() {
             shadowOpacity: 0.15,
             shadowRadius: 12,
             borderWidth: 1,
-            shadowColor: Colors[theme].separator, // or Colors[theme].text for strong contrast
-            borderColor: Colors[theme].text,
+            shadowColor: Colors[colorScheme].separator, // or Colors[colorScheme].text for strong contrast
+            borderColor: Colors[colorScheme].text,
 
             // Android
             elevation: 8,
           }}
         >
           <Text style={[styles.meta, { fontWeight: "500" }]}>
-            {!isBlocked ? "Activar think" : "Desactivar think"}
+            {!isBlockingActive ? "Activar think" : "Desactivar think"}
           </Text>
         </ThemedPressable>
       </View>

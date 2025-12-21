@@ -13,12 +13,15 @@ import { useColorScheme } from "../../components/useColorScheme";
 import Colors from "../../constants/Colors";
 
 import { setDenyAppRemoval } from "app-removal-guard";
+import { useAppStore } from "../../store/appConfigStore";
 import { useConfigStore } from "../../store/configStore"; // adjust path if needed
 
 export default function SettingsScreen() {
   const colorScheme = useColorScheme() ?? "light";
 
-  const isBlocked = useConfigStore((s) => s.isBlocked);
+  const isBlockingActive = useAppStore((state) => state.isBlockingActive);
+
+  //need to start clearing this
   const preventDeletionWhileBlocked = useConfigStore(
     (s) => s.preventDeletionWhileBlocked
   );
@@ -27,7 +30,7 @@ export default function SettingsScreen() {
   );
 
   // ✅ Effective theme: force blocked when blocked, otherwise follow system
-  const theme = isBlocked ? "blocked" : colorScheme;
+  const theme = isBlockingActive ? "blocked" : colorScheme;
   const textColor = Colors[theme].text;
   const separatorColor = Colors[theme].separator;
 
@@ -36,14 +39,14 @@ export default function SettingsScreen() {
       const next = !!value;
 
       // Disallow turning OFF while blocked (matches previous behavior)
-      if (isBlocked && next === false) {
+      if (isBlockingActive && next === false) {
         return;
       }
 
       setPreventDeletionWhileBlocked(next);
 
       // If currently blocked, apply immediately
-      if (isBlocked && next === true) {
+      if (isBlockingActive && next === true) {
         const r = setDenyAppRemoval(true);
         console.log(
           "[AppRemovalGuard] setDenyAppRemoval(activated while blocked) =>",
@@ -52,7 +55,7 @@ export default function SettingsScreen() {
       }
 
       // If not blocked, keep the system permissive when strictMode is off
-      if (!isBlocked && next === false) {
+      if (!isBlockingActive && next === false) {
         const r = setDenyAppRemoval(false);
         console.log(
           "[AppRemovalGuard] setDenyAppRemoval(strictMode off) =>",
@@ -60,7 +63,7 @@ export default function SettingsScreen() {
         );
       }
     },
-    [isBlocked, setPreventDeletionWhileBlocked]
+    [isBlockingActive, setPreventDeletionWhileBlocked]
   );
 
   return (
@@ -118,7 +121,7 @@ export default function SettingsScreen() {
             <Switch
               value={!!preventDeletionWhileBlocked}
               onValueChange={handleToggleStrictMode}
-              disabled={isBlocked && !!preventDeletionWhileBlocked}
+              disabled={isBlockingActive && !!preventDeletionWhileBlocked}
             />
           </View>
         </View>

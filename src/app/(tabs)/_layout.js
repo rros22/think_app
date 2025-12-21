@@ -8,7 +8,7 @@ import LogoSVG from "../../icons/logoSVG";
 import ScheduleSVG from "../../icons/scheduleSVG";
 import SettingsSVG from "../../icons/settingsSVG";
 import StatsSVG from "../../icons/statsSVG";
-import { useConfigStore } from "../../store/configStore";
+import { useAppStore } from "../../store/appConfigStore";
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props) {
@@ -17,9 +17,9 @@ function TabBarIcon(props) {
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const isBlocked = useConfigStore((s) => s.isBlocked);
+  const isBlockingActive = useAppStore((state) => state.isBlockingActive);
 
-  const theme = isBlocked ? "blocked" : colorScheme;
+  const theme = isBlockingActive ? "blocked" : colorScheme;
 
   return (
     <Tabs

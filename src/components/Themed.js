@@ -21,15 +21,15 @@ import { AntDesign } from "@expo/vector-icons";
 import { SafeAreaView as DefaultSafeAreaView } from "react-native-safe-area-context";
 
 import Colors from "../constants/Colors";
-import { useConfigStore } from "../store/configStore";
+import { useAppStore } from "../store/appConfigStore";
 import { useColorScheme } from "./useColorScheme";
 
 export function useThemeColor(props, colorName) {
   const systemTheme = useColorScheme() ?? "light";
-  const isBlocked = useConfigStore((s) => s.isBlocked);
+  const isBlockingActive = useAppStore((state) => state.isBlockingActive);
 
   // Force blocked palette when blocked, otherwise follow system
-  const theme = isBlocked ? "blocked" : systemTheme;
+  const theme = isBlockingActive ? "blocked" : systemTheme;
 
   // Keep your existing per-component override behavior for light/dark props
   const colorFromProps = props?.[systemTheme];
