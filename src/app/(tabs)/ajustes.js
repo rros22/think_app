@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { StyleSheet, Switch } from "react-native";
+import { Platform, StyleSheet, Switch } from "react-native";
 
 import {
   Pressable,
@@ -12,55 +12,61 @@ import {
 import { useColorScheme } from "../../components/useColorScheme";
 import Colors from "../../constants/Colors";
 
-import { setDenyAppRemoval } from "app-removal-guard";
+import { setDenyAppRemoval as _setDenyAppRemoval } from "app-removal-guard";
 import { useAppStore } from "../../store/appConfigStore";
-import { useConfigStore } from "../../store/configStore"; // adjust path if needed
+
+/**
+ * Safe wrapper:
+ * - iOS: calls app-removal-guard
+ * - Android/others: no-op (prevents crash)
+ */
+function setDenyAppRemovalSafe(deny) {
+  if (Platform.OS !== "ios") return { supported: false };
+
+  try {
+    const result = _setDenyAppRemoval(!!deny);
+    return { supported: true, result };
+  } catch (error) {
+    console.warn("[AppRemovalGuard] setDenyAppRemoval failed:", error);
+    return { supported: false, error };
+  }
+}
 
 export default function SettingsScreen() {
   const colorScheme = useColorScheme() ?? "light";
 
   const isBlockingActive = useAppStore((state) => state.isBlockingActive);
 
-  //need to start clearing this
-  const preventDeletionWhileBlocked = useConfigStore(
-    (s) => s.preventDeletionWhileBlocked
+  // strict mode preference
+  const preventDeletionWhileBlocked = useAppStore(
+    (state) => state.preventDeletionWhileBlocked
   );
-  const setPreventDeletionWhileBlocked = useConfigStore(
-    (s) => s.setPreventDeletionWhileBlocked
+  const setPreventDeletionWhileBlocked = useAppStore(
+    (state) => state.setPreventDeletionWhileBlocked
   );
 
-  // ✅ Effective theme: force blocked when blocked, otherwise follow system
+  // Effective theme: force blocked when blocked, otherwise follow system
   const theme = isBlockingActive ? "blocked" : colorScheme;
   const textColor = Colors[theme].text;
   const separatorColor = Colors[theme].separator;
+
+  // If strict mode is ON during an active session, do not allow turning it OFF mid-session
+  const strictLocked = isBlockingActive && preventDeletionWhileBlocked;
 
   const handleToggleStrictMode = useCallback(
     (value) => {
       const next = !!value;
 
-      // Disallow turning OFF while blocked (matches previous behavior)
-      if (isBlockingActive && next === false) {
-        return;
-      }
+      // Disallow turning OFF while blocked (matches BlockScreen behavior)
+      if (isBlockingActive && !next) return;
 
+      // persist preference
       setPreventDeletionWhileBlocked(next);
 
-      // If currently blocked, apply immediately
-      if (isBlockingActive && next === true) {
-        const r = setDenyAppRemoval(true);
-        console.log(
-          "[AppRemovalGuard] setDenyAppRemoval(activated while blocked) =>",
-          r
-        );
-      }
-
-      // If not blocked, keep the system permissive when strictMode is off
-      if (!isBlockingActive && next === false) {
-        const r = setDenyAppRemoval(false);
-        console.log(
-          "[AppRemovalGuard] setDenyAppRemoval(strictMode off) =>",
-          r
-        );
+      // apply immediately only if currently blocked
+      if (isBlockingActive) {
+        const r = setDenyAppRemovalSafe(next);
+        console.log("[AppRemovalGuard] strictMode changed while blocked =>", r);
       }
     },
     [isBlockingActive, setPreventDeletionWhileBlocked]
@@ -119,9 +125,9 @@ export default function SettingsScreen() {
           <View colorRole="card" style={styles.row}>
             <Text style={styles.rowText}>Modo estricto</Text>
             <Switch
-              value={!!preventDeletionWhileBlocked}
+              value={preventDeletionWhileBlocked}
               onValueChange={handleToggleStrictMode}
-              disabled={isBlockingActive && !!preventDeletionWhileBlocked}
+              disabled={strictLocked}
             />
           </View>
         </View>

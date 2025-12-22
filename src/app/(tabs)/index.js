@@ -14,7 +14,6 @@ import { readMifare } from "../../helpers/nfcUtils";
 
 import * as ReactNativeDeviceActivity from "react-native-device-activity";
 import { useAppStore } from "../../store/appConfigStore";
-import { useConfigStore } from "../../store/configStore"; // adjust path if needed
 
 import { useColorScheme } from "../../components/useColorScheme";
 import Colors from "../../constants/Colors";
@@ -43,37 +42,38 @@ function setDenyAppRemovalSafe(deny) {
 }
 
 export default function BlockScreen() {
-  const selectedMode = useAppStore((state) =>
-    state.selectedModeId ? state.modesById[state.selectedModeId] : null
-  );
-
-  const selectedBlockedSelection = useAppStore((state) =>
-    state.selectedModeId
-      ? state.getModeBlockedAppSelection(state.selectedModeId)
-      : null
-  );
+  // subscriptions to app state store
+  const selectedModeId = useAppStore((state) => state.selectedModeId);
+  const modesById = useAppStore((state) => state.modesById);
+  const modeOrder = useAppStore((state) => state.modeOrder);
 
   const isBlockingActive = useAppStore((state) => state.isBlockingActive);
   const setIsBlockingActive = useAppStore((state) => state.setIsBlockingActive);
 
-  const modeOrder = useAppStore((state) => state.modeOrder);
-  const hasAnyModes = modeOrder.length > 0;
-
-  const router = useRouter();
-
-  const preventDeletionWhileBlocked = useConfigStore(
-    (s) => s.preventDeletionWhileBlocked
+  const preventDeletionWhileBlocked = useAppStore(
+    (state) => state.preventDeletionWhileBlocked
   );
 
+  const selectedMode = selectedModeId ? modesById[selectedModeId] : null;
+  const selectedBlockedSelection = selectedMode?.blockedAppSelection ?? null;
+  const hasAnyModes = modeOrder.length > 0;
+
+  // expo router, for navigating between screens
+  const router = useRouter();
+
+  // styling
   const colorScheme = useColorScheme() ?? "light";
   const textColor = Colors[colorScheme].text;
   const pressedIconColor = Colors[colorScheme].textSecondary;
+
+  // screen time api authorisation request
   const [isAuthorized, setIsAuthorized] = useState(false);
   const authRequestedRef = useRef(false);
 
   const requestAuthIfNeeded = useCallback(async () => {
     if (authRequestedRef.current) return isAuthorized;
     authRequestedRef.current = true;
+
     try {
       const result = await ReactNativeDeviceActivity.requestAuthorization?.();
       const ok = typeof result === "boolean" ? result : true;
@@ -86,6 +86,40 @@ export default function BlockScreen() {
       return false;
     }
   }, [isAuthorized]);
+
+  const ensureAuthorizedOrAlert = useCallback(async () => {
+    const ok = await requestAuthIfNeeded();
+    if (!ok) {
+      Alert.alert(
+        "Authorization Required",
+        "Grant Screen Time authorization first."
+      );
+      return false;
+    }
+    return true;
+  }, [requestAuthIfNeeded]);
+
+  const ensureSelectionOrAlert = useCallback(
+    (message) => {
+      if (selectedBlockedSelection) return true;
+
+      Alert.alert(
+        "No Apps Selected",
+        message ?? "Please select apps to block first."
+      );
+      return false;
+    },
+    [selectedBlockedSelection]
+  );
+
+  // NFC helpers: avoid unhandled rejections if scan is cancelled/fails
+  const readNfcCodeSafely = useCallback(async () => {
+    try {
+      return await readMifare();
+    } catch (e) {
+      return null;
+    }
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -101,33 +135,15 @@ export default function BlockScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const persistSelectionIfNeeded = useCallback(() => {
-    if (!selectedBlockedSelection) return false;
+  const blockApps = useCallback(async () => {
+    if (!(await ensureAuthorizedOrAlert())) return;
+    if (!ensureSelectionOrAlert("Please select apps to block first.")) return;
 
     ReactNativeDeviceActivity.setFamilyActivitySelectionId({
       id: SELECTION_ID,
       familyActivitySelection: selectedBlockedSelection,
     });
 
-    return true;
-  }, [selectedBlockedSelection]);
-
-  const blockApps = useCallback(async () => {
-    const ok = await requestAuthIfNeeded();
-    if (!ok) {
-      Alert.alert(
-        "Authorization Required",
-        "Grant Screen Time authorization first."
-      );
-      return;
-    }
-
-    if (!persistSelectionIfNeeded()) {
-      Alert.alert("No Apps Selected", "Please select apps to block first.");
-      return;
-    }
-
-    // Apply app removal protection based on strictMode preference
     const r = setDenyAppRemovalSafe(!!preventDeletionWhileBlocked);
     console.log("[AppRemovalGuard] setDenyAppRemoval(on block) =>", r);
 
@@ -137,21 +153,15 @@ export default function BlockScreen() {
 
     setIsBlockingActive(true);
   }, [
-    requestAuthIfNeeded,
-    persistSelectionIfNeeded,
-    setIsBlockingActive,
+    ensureAuthorizedOrAlert,
+    ensureSelectionOrAlert,
+    selectedBlockedSelection,
     preventDeletionWhileBlocked,
+    setIsBlockingActive,
   ]);
 
   const unblockApps = useCallback(async () => {
-    const ok = await requestAuthIfNeeded();
-    if (!ok) {
-      Alert.alert(
-        "Authorization Required",
-        "Grant Screen Time authorization first."
-      );
-      return;
-    }
+    if (!(await ensureAuthorizedOrAlert())) return;
 
     if (typeof ReactNativeDeviceActivity.unblockSelection !== "function") {
       console.warn("unblockSelection not available in this version.");
@@ -162,84 +172,84 @@ export default function BlockScreen() {
       activitySelectionId: SELECTION_ID,
     });
 
-    // Always allow removal again when unblocked
     const r = setDenyAppRemovalSafe(false);
     console.log("[AppRemovalGuard] setDenyAppRemoval(on unblock) =>", r);
 
     setIsBlockingActive(false);
-  }, [requestAuthIfNeeded, setIsBlockingActive]);
+  }, [ensureAuthorizedOrAlert, setIsBlockingActive]);
+
+  // confirm dialogs (defined after block/unblock so callbacks can reference them safely)
+  const confirmUnblockApps = useCallback(() => {
+    Alert.alert("Terminar sesión", "Confirma que quieres terminar tu sesión.", [
+      { text: "Cancelar", style: "cancel" },
+      { text: "Terminar", style: "destructive", onPress: unblockApps },
+    ]);
+  }, [unblockApps]);
+
+  const confirmBlockApps = useCallback(() => {
+    Alert.alert(
+      "Comenzar sesión?",
+      "Necesitarás tu dispositivo think para pausarla",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Comenzar", style: "destructive", onPress: blockApps },
+      ]
+    );
+  }, [blockApps]);
 
   // Remote blocking / NFC unlock
   const handleRemoteBlock = useCallback(async () => {
-    // Require a configured selection
-    if (!selectedBlockedSelection) {
-      Alert.alert(
-        "No Apps Selected",
+    if (
+      !ensureSelectionOrAlert(
         "Please select apps to block before using remote block."
-      );
+      )
+    ) {
       return;
     }
 
-    // 🔓 UNLOCK PATH (NFC required)
+    // UNLOCK PATH (NFC required)
     if (isBlockingActive) {
-      const code = await readMifare();
-      console.log("NFC code (remote unlock):", code);
-
+      const code = await readNfcCodeSafely();
       if (code !== NFC_TRIGGER_CODE) return;
 
-      Alert.alert(
-        "Unblock Apps?",
-        "This NFC tag will unblock the selected apps.",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Unblock", style: "destructive", onPress: unblockApps },
-        ]
-      );
+      confirmUnblockApps();
       return;
     }
 
     // BLOCK PATH (no NFC required)
-    Alert.alert(
-      "Activar think. remotamente?",
-      "Para desbloquear necesitarás el dispositivo físico.",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Block", style: "destructive", onPress: blockApps },
-      ]
-    );
-  }, [selectedBlockedSelection, isBlockingActive, blockApps, unblockApps]);
+    confirmBlockApps();
+  }, [
+    ensureSelectionOrAlert,
+    isBlockingActive,
+    readNfcCodeSafely,
+    confirmUnblockApps,
+    confirmBlockApps,
+  ]);
 
-  //NFC blocking
+  // NFC blocking
   const handleOpenNfcPress = useCallback(async () => {
-    const code = await readMifare();
+    const code = await readNfcCodeSafely();
     console.log("NFC code:", code);
 
     if (code !== NFC_TRIGGER_CODE) return;
 
-    if (!selectedBlockedSelection) {
-      Alert.alert(
-        "No Apps Selected",
+    if (
+      !ensureSelectionOrAlert(
         "Please select apps to block before using the NFC tag."
-      );
+      )
+    ) {
       return;
     }
 
-    if (isBlockingActive) {
-      Alert.alert(
-        "Unblock Apps?",
-        "This NFC tag will unblock the selected apps.",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Unblock", style: "destructive", onPress: unblockApps },
-        ]
-      );
-    } else {
-      Alert.alert("Block Apps?", "This NFC tag will block the selected apps.", [
-        { text: "Cancel", style: "cancel" },
-        { text: "Block", style: "destructive", onPress: blockApps },
-      ]);
-    }
-  }, [selectedBlockedSelection, isBlockingActive, unblockApps, blockApps]);
+    if (isBlockingActive) confirmUnblockApps();
+    else confirmBlockApps();
+  }, [
+    readNfcCodeSafely,
+    ensureSelectionOrAlert,
+    isBlockingActive,
+    confirmUnblockApps,
+    confirmBlockApps,
+  ]);
 
   const handleMode = () => {
     if (!hasAnyModes) {
@@ -334,16 +344,12 @@ export default function BlockScreen() {
             width: "100%",
             justifyContent: "center",
             alignItems: "center",
-            // iOS
-
             shadowOffset: { width: 6, height: 6 },
             shadowOpacity: 0.15,
             shadowRadius: 12,
             borderWidth: 1,
-            shadowColor: Colors[colorScheme].separator, // or Colors[colorScheme].text for strong contrast
+            shadowColor: Colors[colorScheme].separator,
             borderColor: Colors[colorScheme].text,
-
-            // Android
             elevation: 8,
           }}
         >
@@ -363,14 +369,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: "10%",
     paddingVertical: "15%",
-  },
-  nfcButton: {
-    width: 160,
-    height: 44,
-    backgroundColor: "green",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 6,
   },
   subtitleText: {
     fontSize: 16,

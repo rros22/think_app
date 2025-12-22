@@ -17,6 +17,7 @@ export const useAppStore = create(
       selectedModeId: null,
 
       isBlockingActive: false,
+      preventDeletionWhileBlocked: false,
 
       setSelectedModeId: (id) => {
         if (id != null && !get().modesById[id]) return; // safety
@@ -25,6 +26,10 @@ export const useAppStore = create(
 
       //flag to activate the block
       setIsBlockingActive: (active) => set({ isBlockingActive: !!active }),
+
+      //setter to control whether blocking is active or not
+      setPreventDeletionWhileBlocked: (value) =>
+        set({ preventDeletionWhileBlocked: !!value }),
 
       // Pattern A core: single source of truth for writing a mode
       upsertMode: (mode, opts = {}) => {
@@ -138,6 +143,7 @@ export const useAppStore = create(
         modeOrder: state.modeOrder,
         selectedModeId: state.selectedModeId,
         isBlockingActive: state.isBlockingActive,
+        preventDeletionWhileBlocked: state.preventDeletionWhileBlocked,
       }),
     }
   )
